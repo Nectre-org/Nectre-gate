@@ -13,6 +13,7 @@ from ..executor import (
     MAX_REDIRECTS,
     CallError,
     _default_resolver,
+    _read_capped,
     allow_private_default,
     make_safe_client,
     vet_host,
@@ -21,14 +22,17 @@ from ..models import Source
 from .manifest import from_manifest
 from .openapi import from_openapi
 
+MAX_SPEC_BYTES = 10_000_000  # specs can be larger than API responses, but must stay bounded
+
 __all__ = ["load_document", "import_source", "from_manifest", "from_openapi"]
 
 
 def _fetch_text(
     location: str, client: httpx.Client, resolver: Callable[[str], list[str]], allow_private: bool
 ) -> str:
-    """GET with the private-host check on every hop and at most MAX_REDIRECTS redirects."""
+    """GET with the private-host check on every hop, at most MAX_REDIRECTS redirects, no https->http, size-capped."""
     url = location
+    prev_scheme = ""
     for _ in range(MAX_REDIRECTS + 1):
         parts = urlsplit(url)
         if parts.scheme not in ("http", "https"):
@@ -38,12 +42,21 @@ def _fetch_text(
                 vet_host(parts.hostname or "", resolver)
             except CallError as e:
                 raise ValueError(str(e)) from None
-        resp = client.get(url)
+        if prev_scheme == "https" and parts.scheme == "http":
+            raise ValueError(f"{location}: redirected from https to http; refusing to downgrade")
+        resp = client.send(client.build_request("GET", url), stream=True)
         if resp.is_redirect:
+            resp.close()
+            prev_scheme = parts.scheme
             url = urljoin(url, resp.headers.get("location", ""))
             continue
-        resp.raise_for_status()
-        return resp.text
+        if not resp.is_success:
+            resp.close()
+            resp.raise_for_status()
+        body, cut = _read_capped(resp, MAX_SPEC_BYTES)
+        if cut:
+            raise ValueError(f"{location} is larger than {MAX_SPEC_BYTES} bytes")
+        return body.decode(resp.charset_encoding or "utf-8", errors="replace")
     raise ValueError(f"{location} redirected more than {MAX_REDIRECTS} times")
 
 

@@ -111,3 +111,35 @@ def test_load_document_redirect_to_metadata_blocked():
     with pytest.raises(ValueError, match="private address"):
         load_document("https://spec.example.com/o.yaml", resolver=resolver)
     assert not meta.called
+
+
+@respx.mock
+def test_load_document_refuses_https_to_http_downgrade():
+    respx.get("https://spec.example.com/o.yaml").mock(
+        return_value=httpx.Response(302, headers={"location": "http://spec.example.com/o.yaml"})
+    )
+    plain = respx.get("http://spec.example.com/o.yaml").mock(return_value=httpx.Response(200, text=YAML_DOC))
+    with pytest.raises(ValueError, match="refusing to downgrade"):
+        load_document("https://spec.example.com/o.yaml", resolver=PUBLIC)
+    assert not plain.called
+
+
+@respx.mock
+def test_load_document_rejects_oversized_spec(monkeypatch):
+    import nectregate.importers as imp
+
+    monkeypatch.setattr(imp, "MAX_SPEC_BYTES", 10)
+    respx.get("https://spec.example.com/big.yaml").mock(return_value=httpx.Response(200, text="a: " + "x" * 100))
+    with pytest.raises(ValueError, match="larger than 10 bytes"):
+        load_document("https://spec.example.com/big.yaml", resolver=PUBLIC)
+
+
+def test_pinned_transport_keeps_default_pool_limits():
+    from nectregate.executor import DEFAULT_POOL_LIMITS, _PinnedTransport
+
+    pool = _PinnedTransport(PUBLIC, allow_private=False)._pool
+    limits = DEFAULT_POOL_LIMITS
+    assert limits.max_connections == 100
+    assert pool._max_connections == limits.max_connections
+    assert pool._max_keepalive_connections == limits.max_keepalive_connections
+    assert pool._keepalive_expiry == limits.keepalive_expiry

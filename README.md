@@ -66,6 +66,7 @@ source and as-of metadata took an LLM agent from 51% to 100% accuracy on procure
 
 ```bash
 uv pip install -e ".[dev]"               # add ",embeddings" for hybrid search
+pytest -q                                # offline test suite
 nectre-gate load-demo                    # six keyless public APIs
 nectre-gate search "convert 100 USD to NZD"
 nectre-gate call frankfurter.latest base=USD symbols=NZD
@@ -125,7 +126,8 @@ Example questions and good summaries are the biggest lever on routing quality.
 - Redirects from https to http are refused.
 - Response bodies are streamed and capped at 2 MB; reading stops once the cap is passed. Responses are also shortened
   (25 items per list, 2,000 characters per string) and carry an untrusted-data note.
-- `add <url>` gets the same private-host check on every hop and follows at most 3 redirects.
+- `add <url>` gets the same private-host check on every hop, follows at most 3 redirects, refuses https to http,
+  and rejects specs over 10 MB.
 - `serve --http` has no authentication, so it binds only to a loopback address unless `--allow-remote` is passed.
 - Parameters are validated against the registered schema; unknown parameters are rejected.
 
@@ -137,6 +139,7 @@ Example questions and good summaries are the biggest lever on routing quality.
 | `NECTREGATE_EMBEDDINGS` | `1` | Set `0` to force BM25-only routing |
 | `NECTREGATE_EMBED_MODEL` | `BAAI/bge-small-en-v1.5` | fastembed model for hybrid search |
 | `NECTREGATE_ALLOW_PRIVATE` | unset | `1` allows calls to private network hosts |
+| `HTTP_PROXY`, `HTTPS_PROXY`, ... | ignored | Proxies are not used, so they cannot bypass the private-host check |
 
 ## Status
 
