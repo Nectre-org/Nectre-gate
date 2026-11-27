@@ -1,0 +1,43 @@
+openapi: 3.0.3
+info:
+  title: Pet Store
+  description: A sample API about pets.
+  license: {name: MIT}
+servers:
+  - url: https://pets.example.com/{version}
+    variables:
+      version: {default: v2}
+components:
+  securitySchemes:
+    key:
+      type: apiKey
+      in: header
+      name: X-Api-Key
+  parameters:
+    Limit:
+      name: limit
+      in: query
+      schema: {type: integer, default: 10}
+paths:
+  /pets:
+    get:
+      operationId: listPets
+      summary: List all pets
+      tags: [pets]
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - {name: species, in: query, schema: {type: string, enum: [cat, dog]}}
+    post:
+      operationId: createPet
+      summary: Create a pet
+  /pets/{petId}:
+    parameters:
+      - {name: petId, in: path, required: true, schema: {type: string}}
+    get:
+      operationId: showPetById
+      summary: Info for a specific pet
+      tags: [pets]
+  /old:
+    get:
+      deprecated: true
+      summary: Old endpoint

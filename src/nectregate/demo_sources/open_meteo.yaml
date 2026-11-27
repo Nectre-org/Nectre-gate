@@ -1,0 +1,28 @@
+id: open-meteo
+name: Open-Meteo Weather
+description: Free weather forecasts and current conditions for any latitude and longitude, no API key.
+base_url: https://api.open-meteo.com/v1
+homepage: https://open-meteo.com
+tags: [weather, climate]
+licence: CC BY 4.0
+trust: community
+freshness: live (updated hourly)
+cache_ttl: 600
+endpoints:
+  - id: forecast
+    path: /forecast
+    summary: Current weather and daily forecast (temperature, rain, wind) for a location
+    description: Needs latitude and longitude. Use open-meteo-geocoding.search first to turn a place name into coordinates.
+    examples:
+      - What is the weather in Wellington right now?
+      - Will it rain in Auckland tomorrow?
+      - Temperature forecast for this week
+      - How windy is it today?
+    params:
+      - {name: latitude, in: query, required: true, type: number, description: Latitude in decimal degrees}
+      - {name: longitude, in: query, required: true, type: number, description: Longitude in decimal degrees}
+      - {name: current, in: query, type: string, default: "temperature_2m,precipitation,wind_speed_10m", description: Comma-separated current variables}
+      - {name: daily, in: query, type: string, default: "temperature_2m_max,temperature_2m_min,precipitation_sum", description: Comma-separated daily variables}
+      - {name: forecast_days, in: query, type: integer, default: 3, description: Days of forecast, 1 to 16}
+      - {name: timezone, in: query, type: string, default: auto, description: Time zone for returned times}
+    as_of_field: current.time

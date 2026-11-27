@@ -1,0 +1,23 @@
+id: open-meteo-geocoding
+name: Open-Meteo Geocoding
+description: Look up the coordinates, country and population of a city or place by name.
+base_url: https://geocoding-api.open-meteo.com/v1
+homepage: https://open-meteo.com/en/docs/geocoding-api
+tags: [geography, places]
+licence: CC BY 4.0
+trust: community
+freshness: static reference data
+cache_ttl: 86400
+endpoints:
+  - id: search
+    path: /search
+    summary: Find latitude and longitude for a city or place name
+    examples:
+      - Coordinates of Christchurch
+      - Where is Napier located?
+      - Latitude and longitude of a town
+    params:
+      - {name: name, in: query, required: true, description: Place name to search for}
+      - {name: count, in: query, type: integer, default: 3, description: Number of results}
+      - {name: language, in: query, default: en}
+    response_fields: [results.name, results.latitude, results.longitude, results.country, results.admin1, results.population, results.timezone]

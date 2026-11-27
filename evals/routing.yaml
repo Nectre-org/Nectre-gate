@@ -1,0 +1,25 @@
+# Held-out questions (not copied from endpoint examples). expect = the endpoint that should rank first.
+- {question: "Is it going to be sunny in Dunedin this weekend?", expect: open-meteo.forecast}
+- {question: "current temperature in Tokyo", expect: open-meteo.forecast}
+- {question: "how much rain is expected in Hamilton over the next three days", expect: open-meteo.forecast}
+- {question: "wind speed forecast for Wellington", expect: open-meteo.forecast}
+- {question: "what are the coordinates of Queenstown", expect: open-meteo-geocoding.search}
+- {question: "latitude of Rotorua", expect: open-meteo-geocoding.search}
+- {question: "convert 250 AUD to NZD", expect: frankfurter.latest}
+- {question: "today's exchange rate between the pound and the euro", expect: frankfurter.latest}
+- {question: "what was the yen to dollar rate on 2019-06-01", expect: frankfurter.historical}
+- {question: "historical GBP rate in 2015", expect: frankfurter.historical}
+- {question: "list of currency codes you support", expect: frankfurter.currencies}
+- {question: "capital city of Canada", expect: rest-countries.by_name}
+- {question: "how many people live in Samoa", expect: rest-countries.by_name}
+- {question: "official languages of Belgium", expect: rest-countries.by_name}
+- {question: "which countries use the US dollar as currency", expect: rest-countries.by_currency}
+- {question: "papers about retrieval augmented generation", expect: openalex.search_works}
+- {question: "highly cited research on large language model agents", expect: openalex.search_works}
+- {question: "academic studies on procurement policy", expect: openalex.search_works}
+- {question: "find the scholar Yoshua Bengio and his institution", expect: openalex.search_authors}
+- {question: "who was Kate Sheppard", expect: wikipedia.summary}
+- {question: "give me an overview of the Model Context Protocol", expect: wikipedia.summary}
+- {question: "encyclopedia article on the Treaty of Waitangi", expect: wikipedia.summary}
+- {question: "search Wikipedia for pages mentioning Te Reo revival", expect: wikipedia.search}
+- {question: "what is the population and area of Norway", expect: rest-countries.by_name}

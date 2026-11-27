@@ -1,0 +1,33 @@
+id: openalex
+name: OpenAlex Scholarly Works
+description: Open catalogue of research papers, authors and citations across all fields of science.
+base_url: https://api.openalex.org
+homepage: https://openalex.org
+tags: [research, academic, science]
+licence: CC0
+trust: community
+freshness: updated weekly
+cache_ttl: 3600
+endpoints:
+  - id: search_works
+    path: /works
+    summary: Search academic research papers and articles, with citation counts
+    examples:
+      - Find research papers on prompt injection
+      - Most cited studies about climate adaptation
+      - Academic literature on Māori data sovereignty
+    params:
+      - {name: search, in: query, required: true, description: Words to search titles and abstracts for}
+      - {name: per_page, in: query, type: integer, default: 5, description: Number of results, up to 50}
+      - {name: sort, in: query, description: "e.g. cited_by_count:desc or publication_date:desc"}
+    response_fields: [meta.count, results.display_name, results.publication_year, results.cited_by_count, results.doi, results.authorships.author.display_name]
+  - id: search_authors
+    path: /authors
+    summary: Find researchers and scholars, their institutions and publication counts
+    examples:
+      - Who is the researcher Kai Greshake?
+      - Find an academic author's profile
+    params:
+      - {name: search, in: query, required: true, description: Author name}
+      - {name: per_page, in: query, type: integer, default: 5}
+    response_fields: [results.display_name, results.works_count, results.cited_by_count, results.last_known_institutions.display_name]

@@ -1,0 +1,32 @@
+id: rest-countries
+name: REST Countries
+description: Facts about countries - capital, population, area, languages, currencies, region and borders.
+base_url: https://restcountries.com/v3.1
+homepage: https://restcountries.com
+tags: [geography, countries, reference]
+licence: MPL 2.0
+trust: community
+freshness: static reference data
+cache_ttl: 86400
+allowed_hosts: ['*.restcountries.com']  # the API redirects to a file host
+endpoints:
+  - id: by_name
+    path: /name/{name}
+    summary: Country facts by country name (capital, population, languages, currency)
+    examples:
+      - What is the capital of Japan?
+      - Population of New Zealand
+      - What languages are spoken in Switzerland?
+      - What currency does Fiji use?
+    params:
+      - {name: name, in: path, required: true, description: Country name, e.g. Germany}
+      - {name: fields, in: query, default: "name,capital,population,area,languages,currencies,region,subregion,borders", description: Fields to return}
+  - id: by_currency
+    path: /currency/{currency}
+    summary: Countries that use a given currency
+    examples:
+      - Which countries use the euro?
+      - Countries whose currency is the dollar
+    params:
+      - {name: currency, in: path, required: true, description: Currency code or name, e.g. EUR}
+      - {name: fields, in: query, default: "name,capital,region", description: Fields to return}

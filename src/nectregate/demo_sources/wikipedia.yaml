@@ -1,0 +1,31 @@
+id: wikipedia
+name: Wikipedia
+description: Encyclopedia summaries and article search on English Wikipedia.
+base_url: https://en.wikipedia.org
+homepage: https://en.wikipedia.org
+tags: [encyclopedia, reference, general knowledge]
+licence: CC BY-SA 4.0
+trust: community
+freshness: continuously edited
+cache_ttl: 3600
+endpoints:
+  - id: summary
+    path: /api/rest_v1/page/summary/{title}
+    summary: Short encyclopedia summary of a topic, person, place or event
+    examples:
+      - Who was Ernest Rutherford?
+      - Tell me about the Treaty of Waitangi
+      - Summary of the history of a topic
+    params:
+      - {name: title, in: path, required: true, description: Article title, e.g. Treaty_of_Waitangi}
+    response_fields: [title, description, extract, content_urls.desktop.page, timestamp]
+    as_of_field: timestamp
+  - id: search
+    path: /w/rest.php/v1/search/page
+    summary: Search encyclopedia article titles when the exact article name is unknown
+    examples:
+      - Search Wikipedia for articles about kauri dieback
+    params:
+      - {name: q, in: query, required: true, description: Search words}
+      - {name: limit, in: query, type: integer, default: 5}
+    response_fields: [pages.title, pages.key, pages.description, pages.excerpt]

@@ -1,0 +1,31 @@
+[project]
+name = "nectre-gate"
+version = "0.1.0"
+description = "Register API endpoints once; let LLM agents find the right data source and get back results with provenance."
+readme = "README.md"
+license = "GPL-3.0-or-later"
+requires-python = ">=3.11"
+dependencies = [
+    "mcp>=2.3",
+    "httpx>=0.27",
+    "pydantic>=2.7",
+    "pyyaml>=6.0",
+    "rank-bm25>=0.2.2",
+]
+
+[project.optional-dependencies]
+embeddings = ["fastembed>=0.4"]
+dev = ["pytest>=8", "respx>=0.21"]
+
+[project.scripts]
+nectre-gate = "nectregate.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/nectregate"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -1,0 +1,40 @@
+id: frankfurter
+name: Frankfurter Exchange Rates
+description: Foreign exchange reference rates published by the European Central Bank, current and historical.
+base_url: https://api.frankfurter.dev/v1
+homepage: https://frankfurter.dev
+tags: [finance, currency]
+licence: open data (ECB reference rates)
+trust: community
+freshness: daily, working days around 16:00 CET
+cache_ttl: 3600
+endpoints:
+  - id: latest
+    path: /latest
+    summary: Latest currency exchange rates, convert an amount between currencies
+    examples:
+      - How many New Zealand dollars is 100 US dollars?
+      - Current USD to NZD exchange rate
+      - Convert euros to yen
+    params:
+      - {name: base, in: query, default: EUR, description: Base currency ISO code, e.g. USD}
+      - {name: symbols, in: query, description: Comma-separated target currency codes, e.g. NZD,AUD}
+      - {name: amount, in: query, type: number, description: Amount of the base currency to convert}
+    as_of_field: date
+  - id: historical
+    path: /{date}
+    summary: Exchange rates on a past date
+    examples:
+      - What was the euro to dollar rate on 2020-03-01?
+      - Historical exchange rate last year
+    params:
+      - {name: date, in: path, required: true, description: Date as YYYY-MM-DD}
+      - {name: base, in: query, default: EUR, description: Base currency ISO code}
+      - {name: symbols, in: query, description: Comma-separated target currency codes}
+    as_of_field: date
+  - id: currencies
+    path: /currencies
+    summary: List supported currency codes and their names
+    examples:
+      - Which currencies are supported?
+      - What is the currency code for the Swiss franc?
