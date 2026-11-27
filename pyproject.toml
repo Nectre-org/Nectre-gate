@@ -15,7 +15,7 @@ dependencies = [
 
 [project.optional-dependencies]
 embeddings = ["fastembed>=0.4"]
-dev = ["pytest>=8", "respx>=0.21"]
+dev = ["pytest>=8", "respx>=0.21", "hypothesis>=6"]
 
 [project.scripts]
 nectre-gate = "nectregate.cli:main"

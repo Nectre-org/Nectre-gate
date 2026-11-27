@@ -71,7 +71,7 @@ nectre-gate search "convert 100 USD to NZD"
 nectre-gate call frankfurter.latest base=USD symbols=NZD
 nectre-gate eval evals/routing.yaml      # routing accuracy on held-out questions
 nectre-gate serve                        # MCP over stdio
-nectre-gate serve --http --port 8765     # MCP over streamable HTTP
+nectre-gate serve --http --port 8765     # MCP over streamable HTTP (loopback only; --allow-remote to expose, no auth)
 ```
 
 Connect from Claude Desktop or Claude Code:
@@ -120,7 +120,13 @@ Example questions and good summaries are the biggest lever on routing quality.
 - Only `GET`. Redirects are followed only to the source's own host or its `allowed_hosts` patterns, and credentials
   are never forwarded to another host. Hosts that resolve to private, loopback or link-local addresses are
   blocked unless `NECTREGATE_ALLOW_PRIVATE=1`.
-- Responses are capped (2 MB, 25 items per list, 2,000 characters per string) and carry an untrusted-data note.
+- Connections go to the IP address that was vetted, so DNS rebinding cannot bypass the private-host check.
+  Proxy environment variables (`HTTP_PROXY`, `HTTPS_PROXY`, ...) are not used.
+- Redirects from https to http are refused.
+- Response bodies are streamed and capped at 2 MB; reading stops once the cap is passed. Responses are also shortened
+  (25 items per list, 2,000 characters per string) and carry an untrusted-data note.
+- `add <url>` gets the same private-host check on every hop and follows at most 3 redirects.
+- `serve --http` has no authentication, so it binds only to a loopback address unless `--allow-remote` is passed.
 - Parameters are validated against the registered schema; unknown parameters are rejected.
 
 ## Configuration
