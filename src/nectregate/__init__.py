@@ -6,4 +6,4 @@ from .registry import Registry
 from .router import Router
 
 __all__ = ["CallError", "Endpoint", "Envelope", "Executor", "Param", "Registry", "Router", "Source"]
-__version__ = "0.1.0"
+__version__ = "0.2.0"

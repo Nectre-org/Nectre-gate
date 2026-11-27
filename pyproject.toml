@@ -1,6 +1,6 @@
 [project]
 name = "nectre-gate"
-version = "0.1.0"
+version = "0.2.0"
 description = "Register API endpoints once; let LLM agents find the right data source and get back results with provenance."
 readme = "README.md"
 license = "GPL-3.0-or-later"
@@ -15,7 +15,7 @@ dependencies = [
 
 [project.optional-dependencies]
 embeddings = ["fastembed>=0.4"]
-dev = ["pytest>=8", "respx>=0.21"]
+dev = ["pytest>=8", "respx>=0.21", "hypothesis>=6"]
 
 [project.scripts]
 nectre-gate = "nectregate.cli:main"

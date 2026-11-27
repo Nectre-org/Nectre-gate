@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import argparse
+import ipaddress
 import json
 import sys
 from pathlib import Path
 from typing import Any
 
+import httpx
 import yaml
 
 from .executor import CallError, Executor
@@ -26,6 +28,15 @@ def _parse_kv(pairs: list[str]) -> dict[str, Any]:
         k, v = pair.split("=", 1)
         out[k] = v
     return out
+
+
+def _is_loopback(host: str) -> bool:
+    if host == "localhost":
+        return True
+    try:
+        return ipaddress.ip_address(host).is_loopback
+    except ValueError:
+        return False
 
 
 def run_eval(registry: Registry, path: str, router: Router | None = None) -> dict[str, Any]:
@@ -73,12 +84,16 @@ def main(argv: list[str] | None = None) -> None:
     v.add_argument("--http", action="store_true", help="streamable HTTP instead of stdio")
     v.add_argument("--host", default="127.0.0.1")
     v.add_argument("--port", type=int, default=8765)
+    v.add_argument("--allow-remote", action="store_true", help="allow binding --host to a non-loopback address (no auth!)")
 
     args = ap.parse_args(argv)
     reg = Registry(args.db)
 
     if args.cmd == "add":
-        src = import_source(args.location, id=args.id, name=args.name, base_url=args.base_url)
+        try:
+            src = import_source(args.location, id=args.id, name=args.name, base_url=args.base_url)
+        except (ValueError, httpx.HTTPError) as err:
+            sys.exit(f"error: {err}")
         reg.upsert(src)
         print(f"registered {src.id} ({len(src.endpoints)} endpoints)")
         if src.auth.type != "none":
@@ -111,6 +126,12 @@ def main(argv: list[str] | None = None) -> None:
     elif args.cmd == "serve":
         from .server import build_server
 
+        if args.http and not _is_loopback(args.host) and not args.allow_remote:
+            sys.exit(
+                f"error: refusing to serve HTTP on {args.host!r}: the HTTP transport has no authentication, "
+                "so anyone who can reach this port can call every registered API with your keys. "
+                "Use the default 127.0.0.1, or pass --allow-remote if you understand the risk."
+            )
         server = build_server(reg)
         if args.http:
             server.run("streamable-http", host=args.host, port=args.port)

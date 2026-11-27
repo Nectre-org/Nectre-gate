@@ -26,7 +26,7 @@ def build_server(registry: Registry | None = None, executor: Executor | None = N
     registry = registry or Registry()
     router = router or Router(registry)
     executor = executor or Executor(registry)
-    mcp = MCPServer("nectre-gate", instructions=INSTRUCTIONS, version="0.1.0")
+    mcp = MCPServer("nectre-gate", instructions=INSTRUCTIONS, version="0.2.0")
 
     @mcp.tool()
     def search_sources(question: str, limit: int = 5) -> dict[str, Any]:

@@ -133,3 +133,98 @@ def test_mcp_tools_end_to_end(demo_registry):
 
     cats = _call(server, "list_categories", {})
     assert cats["total_sources"] == 6
+
+
+# --- security hardening -----------------------------------------------------
+import httpcore  # noqa: E402
+
+from nectregate import executor as executor_mod  # noqa: E402
+from nectregate.executor import _PinnedBackend, _read_capped  # noqa: E402
+
+
+class _FakeBackend(httpcore.NetworkBackend):
+    def __init__(self):
+        self.calls = []
+
+    def connect_tcp(self, host, port, timeout=None, local_address=None, socket_options=None):
+        self.calls.append((host, port))
+        return "stream"
+
+
+def test_pinned_backend_connects_to_vetted_ip():
+    inner = _FakeBackend()
+    backend = _PinnedBackend(PUBLIC, allow_private=False, inner=inner)
+    assert backend.connect_tcp("api.example.com", 443) == "stream"
+    assert inner.calls == [("93.184.216.34", 443)]
+
+
+def test_pinned_backend_blocks_rebinding(demo_registry):
+    answers = iter([["93.184.216.34"], ["127.0.0.1"]])
+    resolver = lambda h: next(answers)  # noqa: E731
+    ex = Executor(demo_registry, resolver=resolver)
+    ex._check_host("https://rebind.example.com/")  # first answer is public
+    inner = _FakeBackend()
+    backend = _PinnedBackend(resolver, allow_private=False, inner=inner)
+    with pytest.raises(httpcore.ConnectError, match="private address"):
+        backend.connect_tcp("rebind.example.com", 443)
+    assert inner.calls == []
+
+
+def test_pinned_backend_allow_private_skips_resolver():
+    def resolver(host):
+        raise AssertionError("resolver must not be called")
+
+    inner = _FakeBackend()
+    _PinnedBackend(resolver, allow_private=True, inner=inner).connect_tcp("internal.local", 80)
+    assert inner.calls == [("internal.local", 80)]
+
+
+def test_read_capped_stops_early(monkeypatch):
+    monkeypatch.setattr(executor_mod, "MAX_BYTES", 1000)
+    yields = 0
+
+    def gen():
+        nonlocal yields
+        for _ in range(100):
+            yields += 1
+            yield b"x" * 100
+
+    body, cut = _read_capped(httpx.Response(200, content=gen()))
+    assert len(body) == 1000 and cut
+    assert yields <= 11
+
+
+@respx.mock
+def test_oversized_body_is_cut(executor, monkeypatch):
+    monkeypatch.setattr(executor_mod, "MAX_BYTES", 1000)
+    respx.get("https://api.frankfurter.dev/v1/currencies").mock(return_value=httpx.Response(200, text="a" * 5000))
+    env = executor.call("frankfurter.currencies", {})
+    assert "Body cut at 1000 bytes." in env.notes
+
+
+@respx.mock
+def test_https_to_http_redirect_refused(executor):
+    respx.get("https://api.frankfurter.dev/v1/currencies").mock(
+        return_value=httpx.Response(302, headers={"location": "http://api.frankfurter.dev/v1/currencies"})
+    )
+    plain = respx.get("http://api.frankfurter.dev/v1/currencies").mock(return_value=httpx.Response(200, json={}))
+    with pytest.raises(CallError, match="downgrade"):
+        executor.call("frankfurter.currencies", {})
+    assert not plain.called
+
+
+@respx.mock
+def test_cross_host_redirect_strips_auth_case_insensitively(registry):
+    src = import_source(str(FIXTURES / "petstore.yaml"), id="pets")
+    src = src.model_copy(update={"allowed_hosts": ["cdn.example.com"]})
+    registry.upsert(src)
+    ex = Executor(registry, resolver=PUBLIC)
+    respx.get("https://pets.example.com/v2/pets").mock(
+        return_value=httpx.Response(302, headers={"location": "https://cdn.example.com/p"})
+    )
+    cdn = respx.get("https://cdn.example.com/p").mock(return_value=httpx.Response(200, json=[]))
+    resp = ex._fetch(src, "https://pets.example.com/v2/pets", {"x-api-key": "s3cret", "Accept": "a"})
+    resp.close()
+    sent = cdn.calls[0].request.headers
+    assert all(k.lower() != "x-api-key" for k in sent)
+    assert sent["Accept"] == "a"
